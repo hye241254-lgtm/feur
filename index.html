@@ -45,6 +45,24 @@
     .btn-add-devoir:hover { background:rgba(224,123,57,0.1); }
     .btn-add { margin-left:auto; background:var(--gold); border:none; border-radius:6px; padding:8px 18px; color:#0C0A12; font-size:14px; font-weight:600; font-family:'Cinzel',serif; cursor:pointer; display:flex; align-items:center; gap:7px; transition:opacity 0.2s; letter-spacing:0.5px; }
     .btn-add:hover { opacity:0.85; }
+    .btn-sync { background:transparent; border:1px solid var(--border); border-radius:6px; padding:8px 14px; color:var(--muted); font-size:13px; font-family:'Cinzel',serif; cursor:pointer; display:flex; align-items:center; gap:6px; transition:all 0.2s; letter-spacing:0.5px; }
+    .btn-sync:hover { border-color:var(--teal); color:var(--teal); background:rgba(74,155,142,0.08); }
+
+    /* MODALE SYNC */
+    .sync-modal { background:var(--surface); border:1px solid var(--gold); border-radius:14px; padding:32px; width:100%; max-width:480px; position:relative; }
+    .sync-modal::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,transparent,var(--teal),transparent); border-radius:14px 14px 0 0; }
+    .sync-title { font-family:'Cinzel',serif; font-size:14px; color:var(--teal); letter-spacing:2px; margin-bottom:8px; }
+    .sync-desc { font-family:'Crimson Text',serif; font-size:15px; color:var(--muted); margin-bottom:24px; line-height:1.6; }
+    .sync-buttons { display:flex; flex-direction:column; gap:12px; }
+    .sync-btn { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:14px 18px; color:var(--text); font-size:14px; font-family:'Crimson Text',serif; cursor:pointer; text-align:left; transition:all 0.2s; display:flex; align-items:center; gap:12px; }
+    .sync-btn:hover { border-color:var(--gold); background:rgba(201,168,76,0.06); }
+    .sync-btn .sync-icon { font-size:22px; }
+    .sync-btn .sync-label { font-family:'Cinzel',serif; font-size:12px; color:var(--gold); letter-spacing:1px; display:block; margin-bottom:2px; }
+    .sync-btn .sync-sub { font-size:13px; color:var(--muted); }
+    .sync-drop-zone { border:2px dashed var(--border); border-radius:8px; padding:28px; text-align:center; color:var(--muted); font-style:italic; font-size:14px; cursor:pointer; transition:all 0.2s; position:relative; margin-top:4px; }
+    .sync-drop-zone:hover { border-color:var(--teal); color:var(--teal); }
+    .sync-drop-zone input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+    .sync-progress { font-family:'Cinzel',serif; font-size:11px; color:var(--teal); letter-spacing:1px; margin-top:14px; text-align:center; min-height:20px; }
 
     /* MAIN */
     .main { padding:24px 28px; }
@@ -198,10 +216,40 @@
   <button class="filter-btn f-secondaire" data-filter="secondaire">◈ Secondaires</button>
   <button class="filter-btn f-devoir" data-filter="devoir">📜 Devoirs</button>
   <button class="btn-add-devoir" id="btn-add-devoir">+ Devoir</button>
+  <button class="btn-sync" id="btn-sync">⇅ Sync</button>
   <button class="btn-add" id="btn-add">+ Cours</button>
 </div>
 
 <div class="main" id="main-content"></div>
+
+<!-- MODALE SYNC -->
+<div class="modal-overlay" id="modal-sync" style="display:none;">
+  <div class="sync-modal">
+    <div class="sync-title">⇅ TRANSFERT DE DONNÉES</div>
+    <div class="sync-desc">Pour retrouver tes cours sur un autre appareil, exporte d'abord depuis le PC, puis importe le fichier sur mobile (via Discord, mail, Drive…).</div>
+    <div class="sync-buttons">
+      <button class="sync-btn" id="sync-export">
+        <span class="sync-icon">⬇</span>
+        <div>
+          <span class="sync-label">Exporter</span>
+          <span class="sync-sub">Télécharge un fichier .json avec tous tes cours, devoirs et images</span>
+        </div>
+      </button>
+      <div>
+        <div class="sync-drop-zone" id="sync-drop-zone">
+          <input type="file" accept=".json" id="sync-import-file" />
+          <span style="font-size:24px;display:block;margin-bottom:6px;">⬆</span>
+          <span style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold);letter-spacing:1px;display:block;margin-bottom:4px;">Importer</span>
+          Clique ici ou glisse un fichier .json exporté
+        </div>
+        <div class="sync-progress" id="sync-progress"></div>
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:24px;">
+      <button class="btn-cancel" id="sync-close">Fermer</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODALE DE LECTURE (cours + devoirs) -->
 <div class="view-overlay" id="view-modal" style="display:none;">
@@ -958,10 +1006,86 @@
   });
   document.getElementById('btn-add').addEventListener('click', () => openModal(null));
   document.getElementById('btn-add-devoir').addEventListener('click', () => openDevoirModal(null));
+  document.getElementById('search-input').addEventListener('input', renderAll);
 
   /* ════════════════════════════════
-     MODAL DEVOIR
+     SYNC EXPORT / IMPORT
   ════════════════════════════════ */
+  document.getElementById('btn-sync').addEventListener('click', () => {
+    document.getElementById('sync-progress').textContent = '';
+    document.getElementById('modal-sync').style.display = 'flex';
+  });
+  document.getElementById('sync-close').addEventListener('click', () => {
+    document.getElementById('modal-sync').style.display = 'none';
+  });
+  document.getElementById('modal-sync').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-sync'))
+      document.getElementById('modal-sync').style.display = 'none';
+  });
+
+  // ── EXPORT ──
+  document.getElementById('sync-export').addEventListener('click', async () => {
+    const prog = document.getElementById('sync-progress');
+    prog.textContent = '⏳ Chargement des images…';
+    try {
+      const coursWithImgs = await Promise.all(courses.map(async c => ({
+        ...metaOnly(c), images: await loadImagesFromIDB(c.id)
+      })));
+      const devoirsWithImgs = await Promise.all(devoirs.map(async d => ({
+        ...metaOnly(d), images: await loadImagesFromIDB(d.id)
+      })));
+      const payload = { version: 1, exportedAt: new Date().toISOString(), cours: coursWithImgs, devoirs: devoirsWithImgs };
+      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = `elixir_${new Date().toISOString().slice(0,10)}.json`;
+      a.click(); URL.revokeObjectURL(url);
+      prog.textContent = '✓ Fichier téléchargé — transfère-le sur ton autre appareil.';
+    } catch(e) { prog.textContent = '✕ Erreur : ' + e.message; }
+  });
+
+  // ── IMPORT ──
+  async function handleImport(file) {
+    const prog = document.getElementById('sync-progress');
+    if (!file || !file.name.endsWith('.json')) {
+      prog.textContent = '✕ Fichier invalide — importe un .json exporté depuis ce grimoire.'; return;
+    }
+    prog.textContent = '⏳ Lecture du fichier…';
+    try {
+      const payload = JSON.parse(await file.text());
+      if (!payload.version || !payload.cours) throw new Error('Format non reconnu.');
+      prog.textContent = '⏳ Import des cours…';
+      for (const c of payload.cours || []) {
+        const imgs = c.images || []; delete c.images;
+        const idx = courses.findIndex(x => x.id === c.id);
+        if (idx >= 0) courses[idx] = { ...c, images: imgs };
+        else          courses.unshift({ ...c, images: imgs });
+        await saveImagesToIDB(c.id, imgs);
+      }
+      prog.textContent = '⏳ Import des devoirs…';
+      for (const d of payload.devoirs || []) {
+        const imgs = d.images || []; delete d.images;
+        const idx = devoirs.findIndex(x => x.id === d.id);
+        if (idx >= 0) devoirs[idx] = { ...d, images: imgs };
+        else          devoirs.unshift({ ...d, images: imgs });
+        await saveImagesToIDB(d.id, imgs);
+      }
+      saveCourses(); saveDevoirs(); renderAll(); updateStats();
+      const nb = (payload.cours||[]).length + (payload.devoirs||[]).length;
+      prog.textContent = `✓ ${nb} entrée(s) importée(s) avec succès !`;
+    } catch(e) { prog.textContent = '✕ Erreur : ' + e.message; }
+  }
+
+  document.getElementById('sync-import-file').addEventListener('change', function() {
+    if (this.files[0]) handleImport(this.files[0]); this.value = '';
+  });
+  const syncDrop = document.getElementById('sync-drop-zone');
+  syncDrop.addEventListener('dragover',  e => { e.preventDefault(); syncDrop.style.borderColor = 'var(--teal)'; });
+  syncDrop.addEventListener('dragleave', () => { syncDrop.style.borderColor = 'var(--border)'; });
+  syncDrop.addEventListener('drop', e => {
+    e.preventDefault(); syncDrop.style.borderColor = 'var(--border)';
+    if (e.dataTransfer.files[0]) handleImport(e.dataTransfer.files[0]);
+  });
   function openDevoirModal(d) {
     editingDevoirId  = d ? d.id : null;
     selectedDvScore  = d ? (d.score  || '') : '';
