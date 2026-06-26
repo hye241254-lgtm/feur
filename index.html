@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Elixir — Académie des Arts Magiques</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0C0A12; --surface: #13101E; --card: #1A1628; --border: #2A2240;
+      --gold: #C9A84C; --gold-light: #E8C96A; --purple: #7B5EA7;
+      --purple-light: #A07DD4; --teal: #4A9B8E; --text: #E8E0D0;
+      --muted: #7A6E88; --red: #C0392B; --green: #27AE60;
+      --amber: #E07B39; --amber-light: #F0A060;
+    }
+    html, body { height: 100%; font-family: 'Crimson Text', Georgia, serif; background: var(--bg); color: var(--text); }
+
+    /* HEADER */
+    .header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 18px 28px; display: flex; align-items: center; gap: 16px;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .header::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--gold),transparent); }
+    .crest { width:48px; height:48px; border:2px solid var(--gold); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; background:var(--card); flex-shrink:0; color:var(--gold); }
+    .server-name { font-family:'Cinzel',serif; font-size:18px; font-weight:700; color:var(--gold); letter-spacing:2px; line-height:1.2; }
+    .server-sub { font-style:italic; font-size:13px; color:var(--muted); margin-top:2px; }
+    .header-stats { margin-left:auto; display:flex; gap:14px; align-items:center; }
+    .stat-pill { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:5px 14px; font-family:'Cinzel',serif; font-size:11px; color:var(--muted); display:flex; align-items:center; gap:6px; white-space:nowrap; }
+    .stat-pill b { color:var(--gold); font-weight:600; }
+
+    /* TOOLBAR */
+    .toolbar { background:var(--surface); border-bottom:1px solid var(--border); padding:10px 24px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; position:sticky; top:85px; z-index:40; }
+    .search-box { background:var(--card); border:1px solid var(--border); border-radius:6px; padding:7px 12px; color:var(--text); font-size:14px; font-family:'Crimson Text',serif; width:220px; outline:none; transition:border-color 0.2s; }
+    .search-box::placeholder { color:var(--muted); font-style:italic; }
+    .search-box:focus { border-color:var(--gold); }
+    .filter-btn { background:var(--card); border:1px solid var(--border); border-radius:6px; padding:6px 14px; color:var(--muted); font-size:13px; font-family:'Crimson Text',serif; cursor:pointer; transition:all 0.2s; }
+    .filter-btn.active,.filter-btn:hover { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.08); }
+    .filter-btn.f-principale.active,.filter-btn.f-principale:hover { border-color:var(--purple-light); color:var(--purple-light); background:rgba(123,94,167,0.1); }
+    .filter-btn.f-secondaire.active,.filter-btn.f-secondaire:hover { border-color:var(--teal); color:var(--teal); background:rgba(74,155,142,0.1); }
+    .filter-btn.f-devoir.active,.filter-btn.f-devoir:hover { border-color:var(--amber-light); color:var(--amber-light); background:rgba(224,123,57,0.1); }
+    .btn-add-devoir { background:transparent; border:1px solid var(--amber); border-radius:6px; padding:8px 16px; color:var(--amber); font-size:13px; font-weight:600; font-family:'Cinzel',serif; cursor:pointer; display:flex; align-items:center; gap:7px; transition:all 0.2s; letter-spacing:0.5px; }
+    .btn-add-devoir:hover { background:rgba(224,123,57,0.1); }
+    .btn-add { margin-left:auto; background:var(--gold); border:none; border-radius:6px; padding:8px 18px; color:#0C0A12; font-size:14px; font-weight:600; font-family:'Cinzel',serif; cursor:pointer; display:flex; align-items:center; gap:7px; transition:opacity 0.2s; letter-spacing:0.5px; }
+    .btn-add:hover { opacity:0.85; }
+
+    /* MAIN */
+    .main { padding:24px 28px; }
+    .section-block { margin-bottom:32px; }
+    .section-header { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+    .section-title { font-family:'Cinzel',serif; font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); white-space:nowrap; }
+    .section-line { flex:1; height:1px; background:linear-gradient(90deg,var(--border),transparent); }
+    .section-count { font-family:'Cinzel',serif; font-size:10px; color:var(--muted); white-space:nowrap; }
+    .courses-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
+
+    /* CARD */
+    .course-card { background:var(--card); border:1px solid var(--border); border-radius:10px; overflow:hidden; transition:all 0.25s; position:relative; display:flex; flex-direction:column; }
+    .course-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; z-index:1; }
+    .course-card.mat-principale::before { background:linear-gradient(90deg,var(--purple),var(--purple-light)); }
+    .course-card.mat-secondaire::before { background:linear-gradient(90deg,var(--teal),#6DC9BD); }
+    .course-card:hover { border-color:var(--gold); transform:translateY(-2px); box-shadow:0 4px 24px rgba(201,168,76,0.12); }
+    .card-image { width:100%; height:150px; object-fit:cover; display:block; cursor:zoom-in; }
+    .card-body { padding:14px; flex:1; display:flex; flex-direction:column; }
+    .card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+    .mat-badge { font-size:10px; font-family:'Cinzel',serif; letter-spacing:1px; padding:3px 9px; border-radius:4px; text-transform:uppercase; }
+    .badge-principale { background:rgba(123,94,167,0.18); color:var(--purple-light); border:1px solid rgba(123,94,167,0.35); }
+    .badge-secondaire { background:rgba(74,155,142,0.15); color:var(--teal); border:1px solid rgba(74,155,142,0.3); }
+    .course-score { font-family:'Cinzel',serif; font-size:17px; font-weight:700; }
+    .score-a { color:var(--green); } .score-b { color:#5DADE2; } .score-c { color:var(--gold); } .score-d { color:var(--red); } .score-none { color:var(--muted); font-size:12px; font-style:italic; }
+    .course-name { font-size:16px; font-weight:600; color:var(--text); margin-bottom:4px; line-height:1.35; }
+    .course-instructor { font-size:13px; font-style:italic; color:var(--muted); margin-bottom:8px; }
+    .stars { display:flex; gap:3px; margin-bottom:8px; }
+    .star { font-size:14px; } .star.on { color:var(--gold); } .star.off { color:var(--border); }
+    .card-imgs { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px; }
+    .card-img-thumb { width:54px; height:54px; object-fit:cover; border-radius:5px; border:1px solid var(--border); cursor:zoom-in; transition:border-color 0.2s; }
+    .card-img-thumb:hover { border-color:var(--gold); }
+    .tag-list { display:flex; gap:5px; flex-wrap:wrap; margin-top:4px; }
+    .tag { background:rgba(201,168,76,0.07); border:1px solid rgba(201,168,76,0.2); border-radius:4px; padding:2px 7px; font-size:11px; color:var(--gold); font-style:italic; }
+    .note-preview { font-size:13px; font-style:italic; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-top:1px solid var(--border); padding-top:8px; margin-top:8px; }
+    .card-actions { display:flex; gap:8px; margin-top:12px; }
+    .btn-sm { background:transparent; border:1px solid var(--border); border-radius:5px; padding:5px 11px; color:var(--muted); font-size:12px; font-family:'Crimson Text',serif; cursor:pointer; transition:all 0.2s; }
+    .btn-sm:hover { border-color:var(--gold); color:var(--gold); }
+    .btn-sm.danger:hover { border-color:var(--red); color:var(--red); }
+    .empty-state { grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--muted); font-style:italic; font-size:16px; }
+    .empty-state span { display:block; font-size:13px; margin-top:8px; }
+
+    /* MODALE DE LECTURE */
+    .view-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.88); display:flex; align-items:center; justify-content:center; z-index:150; padding:20px; }
+    .view-modal { background:var(--surface); border:1px solid var(--gold); border-radius:16px; width:100%; max-width:780px; max-height:92vh; overflow-y:auto; position:relative; display:flex; flex-direction:column; }
+    .view-modal::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,transparent,var(--gold),transparent); border-radius:16px 16px 0 0; }
+    .view-header { padding:32px 36px 20px; border-bottom:1px solid var(--border); }
+    .view-badge-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+    .view-title { font-family:'Cinzel',serif; font-size:26px; color:var(--text); letter-spacing:1px; line-height:1.3; }
+    .view-instructor { font-family:'Crimson Text',serif; font-size:17px; color:var(--muted); font-style:italic; margin-top:6px; }
+    .view-meta { display:flex; gap:16px; flex-wrap:wrap; margin-top:14px; align-items:center; }
+    .view-body { padding:28px 36px; display:flex; flex-direction:column; gap:22px; }
+    .view-section-label { font-family:'Cinzel',serif; font-size:10px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; }
+    .view-notes { font-family:'Crimson Text',serif; font-size:18px; color:var(--text); line-height:1.7; white-space:pre-wrap; }
+    .view-images-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
+    .view-images-grid img { width:100%; border-radius:8px; border:1px solid var(--border); cursor:zoom-in; transition:border-color 0.2s; object-fit:cover; aspect-ratio:4/3; }
+    .view-images-grid img:hover { border-color:var(--gold); }
+    .view-footer { padding:18px 36px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px; }
+    .view-close { position:absolute; top:18px; right:22px; background:transparent; border:1px solid var(--border); border-radius:50%; width:36px; height:36px; color:var(--muted); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+    .view-close:hover { border-color:var(--gold); color:var(--gold); }
+    .view-stars { font-size:20px; }
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.84); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+    .modal { background:var(--surface); border:1px solid var(--gold); border-radius:14px; padding:28px; width:100%; max-width:540px; max-height:92vh; overflow-y:auto; position:relative; }
+    .modal::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,transparent,var(--gold),transparent); border-radius:14px 14px 0 0; }
+    .modal-title { font-family:'Cinzel',serif; font-size:15px; color:var(--gold); letter-spacing:2px; margin-bottom:22px; display:flex; align-items:center; gap:10px; }
+    .form-row { margin-bottom:14px; }
+    .form-label { font-family:'Cinzel',serif; font-size:10px; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px; display:block; }
+    .form-input,.form-select,.form-textarea { width:100%; background:var(--card); border:1px solid var(--border); border-radius:6px; padding:9px 12px; color:var(--text); font-size:14px; font-family:'Crimson Text',serif; outline:none; transition:border-color 0.2s; }
+    .form-input:focus,.form-select:focus,.form-textarea:focus { border-color:var(--gold); }
+    .form-select option { background:#1A1628; }
+    .form-textarea { resize:vertical; min-height:80px; }
+    .divider { height:1px; background:var(--border); margin:16px 0; }
+
+    /* IMAGE UPLOAD */
+    .img-upload-area { border:2px dashed var(--border); border-radius:8px; padding:20px; text-align:center; cursor:pointer; transition:all 0.2s; color:var(--muted); font-style:italic; font-size:13px; position:relative; }
+    .img-upload-area:hover { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.04); }
+    .img-upload-area input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+    .img-preview-list { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .img-preview-item { position:relative; }
+    .img-preview-thumb { width:72px; height:72px; object-fit:cover; border-radius:6px; border:1px solid var(--border); display:block; }
+    .img-remove-btn { position:absolute; top:-6px; right:-6px; background:var(--red); border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+
+    /* SCORE */
+    .score-picker { display:flex; gap:8px; flex-wrap:wrap; }
+    .score-option { background:var(--card); border:1px solid var(--border); border-radius:6px; padding:8px 18px; cursor:pointer; font-weight:600; font-family:'Cinzel',serif; font-size:14px; transition:all 0.2s; min-width:52px; text-align:center; color:var(--muted); }
+    .score-option:hover { border-color:var(--gold); color:var(--gold); }
+    .score-option.s-a.selected { border-color:var(--green); background:rgba(39,174,96,0.1); color:var(--green); }
+    .score-option.s-b.selected { border-color:#5DADE2; background:rgba(93,173,226,0.1); color:#5DADE2; }
+    .score-option.s-c.selected { border-color:var(--gold); background:rgba(201,168,76,0.1); color:var(--gold); }
+    .score-option.s-d.selected { border-color:var(--red); background:rgba(192,57,43,0.1); color:var(--red); }
+    .score-option.s-e.selected,.score-option.s-na.selected { border-color:var(--muted); background:rgba(122,110,136,0.1); color:var(--muted); }
+    .stars-picker { display:flex; gap:8px; }
+    .star-pick { font-size:26px; cursor:pointer; transition:transform 0.1s; color:var(--border); user-select:none; }
+    .star-pick:hover { transform:scale(1.2); }
+    .star-pick.on { color:var(--gold); }
+    .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:22px; }
+    .btn-cancel { background:transparent; border:1px solid var(--border); border-radius:6px; padding:9px 20px; color:var(--muted); font-size:14px; font-family:'Crimson Text',serif; cursor:pointer; transition:all 0.2s; }
+    .btn-cancel:hover { border-color:var(--muted); color:var(--text); }
+    .btn-save { background:var(--gold); border:none; border-radius:6px; padding:9px 24px; color:#0C0A12; font-size:14px; font-weight:600; font-family:'Cinzel',serif; cursor:pointer; transition:opacity 0.2s; letter-spacing:0.5px; }
+    .btn-save:hover { opacity:0.85; }
+
+    /* TOAST */
+    .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--card); border:1px solid var(--gold); border-radius:8px; padding:10px 20px; font-family:'Cinzel',serif; font-size:12px; color:var(--gold); letter-spacing:1px; opacity:0; transition:opacity 0.3s; z-index:300; pointer-events:none; }
+    .toast.show { opacity:1; }
+
+    /* DEVOIR CARD */
+    .course-card.mat-devoir::before { background:linear-gradient(90deg,var(--amber),var(--amber-light)); }
+    .badge-devoir { background:rgba(224,123,57,0.15); color:var(--amber-light); border:1px solid rgba(224,123,57,0.35); }
+    .devoir-status { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-family:'Cinzel',serif; padding:3px 9px; border-radius:4px; }
+    .status-rendu    { background:rgba(39,174,96,0.12);  color:var(--green); border:1px solid rgba(39,174,96,0.3); }
+    .status-encours  { background:rgba(201,168,76,0.10); color:var(--gold);  border:1px solid rgba(201,168,76,0.3); }
+    .status-retard   { background:rgba(192,57,43,0.12);  color:var(--red);   border:1px solid rgba(192,57,43,0.3); }
+    .devoir-deadline { font-size:12px; color:var(--muted); font-style:italic; margin-top:4px; }
+    .devoir-deadline.urgent { color:var(--red); }
+
+    /* LIGHTBOX */
+    .lightbox { position:fixed; inset:0; background:rgba(0,0,0,0.94); display:none; align-items:center; justify-content:center; z-index:200; }
+    .lightbox.open { display:flex; }
+    .lightbox img { max-width:90vw; max-height:88vh; border-radius:8px; border:2px solid var(--gold); object-fit:contain; cursor:zoom-out; }
+    .lb-close { position:absolute; top:20px; right:24px; background:var(--card); border:1px solid var(--border); border-radius:50%; width:38px; height:38px; color:var(--muted); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+    .lb-close:hover { border-color:var(--gold); color:var(--gold); }
+    .lb-nav { position:absolute; top:50%; transform:translateY(-50%); background:rgba(19,16,30,0.85); border:1px solid var(--border); border-radius:50%; width:46px; height:46px; color:var(--text); font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+    .lb-nav:hover { border-color:var(--gold); color:var(--gold); }
+    .lb-prev { left:24px; } .lb-next { right:24px; }
+    .lb-counter { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); font-family:'Cinzel',serif; font-size:11px; color:var(--muted); letter-spacing:2px; }
+
+    ::-webkit-scrollbar { width:6px; }
+    ::-webkit-scrollbar-track { background:var(--bg); }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+    ::-webkit-scrollbar-thumb:hover { background:var(--muted); }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="crest">✦</div>
+  <div>
+    <div class="server-name">ELIXIR — ACADÉMIE DES ARTS MAGIQUES</div>
+    <div class="server-sub">Registre personnel des cours &amp; formations</div>
+  </div>
+  <div class="header-stats">
+    <div class="stat-pill">✦ <b id="stat-total">0</b>&nbsp;cours suivis</div>
+    <div class="stat-pill">Moyenne :&nbsp;<b id="stat-avg">—</b></div>
+    <div class="stat-pill">📜 <b id="stat-devoirs">0</b>&nbsp;devoir(s) en cours</div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <input class="search-box" id="search-input" type="text" placeholder="🔍 Chercher un cours, un professeur…" />
+  <button class="filter-btn active" data-filter="all">Tous</button>
+  <button class="filter-btn f-principale" data-filter="principale">✦ Principales</button>
+  <button class="filter-btn f-secondaire" data-filter="secondaire">◈ Secondaires</button>
+  <button class="filter-btn f-devoir" data-filter="devoir">📜 Devoirs</button>
+  <button class="btn-add-devoir" id="btn-add-devoir">+ Devoir</button>
+  <button class="btn-add" id="btn-add">+ Cours</button>
+</div>
+
+<div class="main" id="main-content"></div>
+
+<!-- MODALE DE LECTURE (cours + devoirs) -->
+<div class="view-overlay" id="view-modal" style="display:none;">
+  <div class="view-modal">
+    <button class="view-close" id="view-close">✕</button>
+    <div class="view-header">
+      <div class="view-badge-row" id="view-badge-row"></div>
+      <div class="view-title" id="view-title"></div>
+      <div class="view-instructor" id="view-instructor"></div>
+      <div class="view-meta" id="view-meta"></div>
+    </div>
+    <div class="view-body" id="view-body"></div>
+    <div class="view-footer">
+      <button class="btn-cancel" id="view-btn-edit">✎ Modifier</button>
+      <button class="btn-cancel" id="view-btn-close" style="border-color:var(--border);">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ÉDITION COURS -->
+<div class="modal-overlay" id="modal" style="display:none;">
+  <div class="modal">
+    <div class="modal-title">✦ <span id="modal-title-text">Nouveau cours</span></div>
+    <div class="form-row">
+      <label class="form-label">Matière *</label>
+      <select class="form-select" id="f-matiere">
+        <optgroup label="— Matières Principales —">
+          <option value="Sortilège">Sortilège</option>
+          <option value="Défenses contre les forces opposées">Défenses contre les forces opposées</option>
+          <option value="Créatures magiques">Créatures magiques</option>
+          <option value="Histoire de la magie">Histoire de la magie</option>
+          <option value="Potions">Potions</option>
+          <option value="Botanique">Botanique</option>
+        </optgroup>
+        <optgroup label="— Matières Secondaires —">
+          <option value="Étude des non-mages">Étude des non-mages</option>
+          <option value="Métamorphose">Métamorphose</option>
+          <option value="Runes">Runes</option>
+          <option value="Cuisine">Cuisine</option>
+          <option value="Divination">Divination</option>
+          <option value="Vol">Vol</option>
+        </optgroup>
+        <optgroup label="— Autre —">
+          <option value="Autre">Autre (personnalisé)</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="form-row" id="custom-name-row" style="display:none;">
+      <label class="form-label">Nom personnalisé</label>
+      <input class="form-input" id="f-custom-name" type="text" placeholder="Nom du cours…" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Type</label>
+      <select class="form-select" id="f-type">
+        <option value="principale">Matière Principale</option>
+        <option value="secondaire">Matière Secondaire</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Professeur / Instructeur</label>
+      <input class="form-input" id="f-instructor" type="text" placeholder="Pseudo RP du professeur…" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Date du cours</label>
+      <input class="form-input" id="f-date" type="date" />
+    </div>
+    <div class="divider"></div>
+    <div class="form-row">
+      <label class="form-label">Photos / Captures du cours</label>
+      <div class="img-upload-area" id="upload-area">
+        <input type="file" accept="image/*" multiple id="img-file-input" />
+        <div style="font-size:28px;margin-bottom:6px;">🖼</div>
+        Clique ici ou glisse des images (captures d'écran, screenshots…)
+      </div>
+      <div class="img-preview-list" id="img-preview-list"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="form-row">
+      <label class="form-label">Note obtenue</label>
+      <div class="score-picker">
+        <div class="score-option s-a" data-score="A">A</div>
+        <div class="score-option s-b" data-score="B">B</div>
+        <div class="score-option s-c" data-score="C">C</div>
+        <div class="score-option s-d" data-score="D">D</div>
+        <div class="score-option s-e" data-score="Échec" style="font-size:11px;padding:8px 10px;min-width:60px;">Échec</div>
+        <div class="score-option s-na" data-score="N/A" style="font-size:11px;padding:8px 10px;">N/A</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Appréciation (1 à 5 étoiles)</label>
+      <div class="stars-picker" id="stars-picker">
+        <span class="star-pick" data-v="1">★</span>
+        <span class="star-pick" data-v="2">★</span>
+        <span class="star-pick" data-v="3">★</span>
+        <span class="star-pick" data-v="4">★</span>
+        <span class="star-pick" data-v="5">★</span>
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Notes &amp; observations personnelles</label>
+      <textarea class="form-textarea" id="f-notes" placeholder="Ce que tu as retenu, sortilèges appris, difficultés rencontrées…"></textarea>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Mots-clés (séparés par des virgules)</label>
+      <input class="form-input" id="f-tags" type="text" placeholder="Ex: sorts, duel, herbologie…" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btn-cancel">Annuler</button>
+      <button class="btn-save" id="btn-save">✦ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DEVOIR -->
+<div class="modal-overlay" id="modal-devoir" style="display:none;">
+  <div class="modal">
+    <div class="modal-title">📜 <span id="modal-devoir-title-text">Nouveau devoir</span></div>
+    <div class="form-row">
+      <label class="form-label">Sujet du devoir *</label>
+      <input class="form-input" id="dv-sujet" type="text" placeholder="Ex: Dissertation sur les runes elfiques…" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Matière liée</label>
+      <select class="form-select" id="dv-matiere">
+        <option value="">— Aucune —</option>
+        <optgroup label="— Matières Principales —">
+          <option>Sortilège</option>
+          <option>Défenses contre les forces opposées</option>
+          <option>Créatures magiques</option>
+          <option>Histoire de la magie</option>
+          <option>Potions</option>
+          <option>Botanique</option>
+        </optgroup>
+        <optgroup label="— Matières Secondaires —">
+          <option>Étude des non-mages</option>
+          <option>Métamorphose</option>
+          <option>Runes</option>
+          <option>Cuisine</option>
+          <option>Divination</option>
+          <option>Vol</option>
+        </optgroup>
+        <option value="Autre">Autre</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Professeur / Instructeur</label>
+      <input class="form-input" id="dv-instructor" type="text" placeholder="Pseudo RP du professeur…" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Date de rendu</label>
+      <input class="form-input" id="dv-deadline" type="date" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Statut</label>
+      <div class="score-picker" id="dv-status-picker">
+        <div class="score-option s-a" data-dv-status="rendu" style="font-size:11px;padding:8px 12px;">✓ Rendu</div>
+        <div class="score-option s-c" data-dv-status="encours" style="font-size:11px;padding:8px 12px;">⏳ En cours</div>
+        <div class="score-option s-d" data-dv-status="retard" style="font-size:11px;padding:8px 12px;">✕ En retard</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Note obtenue</label>
+      <div class="score-picker" id="dv-score-picker">
+        <div class="score-option s-a" data-dv-score="A">A</div>
+        <div class="score-option s-b" data-dv-score="B">B</div>
+        <div class="score-option s-c" data-dv-score="C">C</div>
+        <div class="score-option s-d" data-dv-score="D">D</div>
+        <div class="score-option s-e" data-dv-score="Échec" style="font-size:11px;padding:8px 10px;min-width:60px;">Échec</div>
+        <div class="score-option s-na" data-dv-score="N/A" style="font-size:11px;padding:8px 10px;">N/A</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="form-row">
+      <label class="form-label">Photos / Captures du devoir</label>
+      <div class="img-upload-area" id="dv-upload-area">
+        <input type="file" accept="image/*" multiple id="dv-img-file-input" />
+        <div style="font-size:28px;margin-bottom:6px;">🖼</div>
+        Clique ici ou glisse des images…
+      </div>
+      <div class="img-preview-list" id="dv-img-preview-list"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="form-row">
+      <label class="form-label">Notes & observations</label>
+      <textarea class="form-textarea" id="dv-notes" placeholder="Consignes, difficultés, retours du professeur…"></textarea>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Mots-clés (séparés par des virgules)</label>
+      <input class="form-input" id="dv-tags" type="text" placeholder="Ex: écrit, oral, runes…" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="dv-btn-cancel">Annuler</button>
+      <button class="btn-save" id="dv-btn-save">📜 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <button class="lb-close" id="lb-close">✕</button>
+  <button class="lb-nav lb-prev" id="lb-prev">‹</button>
+  <img id="lb-img" src="" alt="Image du cours" />
+  <button class="lb-nav lb-next" id="lb-next">›</button>
+  <div class="lb-counter" id="lb-counter"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  /* ════════════════════════════════
+     ÉTAT & CONSTANTES
+  ════════════════════════════════ */
+  const STORAGE_KEY  = 'elixir_magie_cours_v3';
+  const STORAGE_KEY_DEVOIRS = 'elixir_magie_devoirs_v1';
+  const PRINCIPALES  = ['Sortilège','Défenses contre les forces opposées','Créatures magiques','Histoire de la magie','Potions','Botanique'];
+  const SECONDAIRES  = ['Étude des non-mages','Métamorphose','Runes','Cuisine','Divination','Vol'];
+
+  let courses       = [];
+  let devoirs       = [];
+  let currentFilter = 'all';
+  let editingId     = null;
+  let editingDevoirId = null;
+  let selectedScore = '';
+  let selectedStars = 0;
+  let selectedDvScore  = '';
+  let selectedDvStatus = 'encours';
+  let pendingImages = [];   // [{dataUrl}]
+  let pendingDvImages = [];
+  let lbImages      = [];
+  let lbIndex       = 0;
+
+  /* ════════════════════════════════
+     INDEXEDDB (images HD) + LOCALSTORAGE (métadonnées)
+  ════════════════════════════════ */
+
+  let db = null;
+  const DB_NAME   = 'ElixirImagesDB';
+  const DB_VER    = 1;
+  const IMG_STORE = 'images';
+
+  function openDB() {
+    return new Promise((res, rej) => {
+      if (db) { res(db); return; }
+      const req = indexedDB.open(DB_NAME, DB_VER);
+      req.onupgradeneeded = e => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains(IMG_STORE))
+          d.createObjectStore(IMG_STORE);
+      };
+      req.onsuccess = e => { db = e.target.result; res(db); };
+      req.onerror   = () => rej(req.error);
+    });
+  }
+
+  async function saveImagesToIDB(itemId, dataUrls) {
+    const d = await openDB();
+    return new Promise((res, rej) => {
+      const tx = d.transaction(IMG_STORE, 'readwrite');
+      tx.objectStore(IMG_STORE).put(dataUrls, 'img_' + itemId);
+      tx.oncomplete = res;
+      tx.onerror    = () => rej(tx.error);
+    });
+  }
+
+  async function loadImagesFromIDB(itemId) {
+    if (!itemId) return [];
+    const d = await openDB();
+    return new Promise(res => {
+      const tx  = d.transaction(IMG_STORE, 'readonly');
+      const req = tx.objectStore(IMG_STORE).get('img_' + itemId);
+      req.onsuccess = () => res(req.result || []);
+      req.onerror   = () => res([]);
+    });
+  }
+
+  async function deleteImagesFromIDB(itemId) {
+    const d = await openDB();
+    return new Promise(res => {
+      const tx = d.transaction(IMG_STORE, 'readwrite');
+      tx.objectStore(IMG_STORE).delete('img_' + itemId);
+      tx.oncomplete = res;
+      tx.onerror    = res;
+    });
+  }
+
+  function metaOnly(item) {
+    const copy = Object.assign({}, item);
+    delete copy.images;
+    return copy;
+  }
+
+  function loadCourses() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) courses = JSON.parse(raw);
+    } catch(e) { courses = []; }
+  }
+
+  function loadDevoirs() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_DEVOIRS);
+      if (raw) devoirs = JSON.parse(raw);
+    } catch(e) { devoirs = []; }
+  }
+
+  function saveCourses() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(courses.map(metaOnly)));
+    } catch(e) { console.warn('localStorage plein', e); }
+  }
+
+  function saveDevoirs() {
+    try {
+      localStorage.setItem(STORAGE_KEY_DEVOIRS, JSON.stringify(devoirs.map(metaOnly)));
+    } catch(e) { console.warn('localStorage plein', e); }
+  }
+
+  async function loadAllImages() {
+    await Promise.all([
+      ...courses.map(async c => { c.images = await loadImagesFromIDB(c.id); }),
+      ...devoirs.map(async d => { d.images = await loadImagesFromIDB(d.id); }),
+    ]);
+  }
+
+  window.addEventListener('beforeunload', () => { saveCourses(); saveDevoirs(); });
+  window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') { saveCourses(); saveDevoirs(); }
+  });
+
+  /* ════════════════════════════════
+     HELPERS
+  ════════════════════════════════ */
+  function getAutoType(name) {
+    if (PRINCIPALES.includes(name)) return 'principale';
+    if (SECONDAIRES.includes(name)) return 'secondaire';
+    return null;
+  }
+
+  function scoreClass(s) {
+    if (!s || s === 'N/A' || s === 'Échec') return 'score-none';
+    if (s === 'A') return 'score-a';
+    if (s === 'B') return 'score-b';
+    if (s === 'C') return 'score-c';
+    return 'score-d';
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // Lecture simple HD — pas de redimensionnement, pas de compression
+  function fileToDataUrl(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload  = e => res(e.target.result);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  }
+
+  /* ════════════════════════════════
+     RENDU GRILLE
+  ════════════════════════════════ */
+  function buildCard(c) {
+    const stars    = Array.from({length:5}, (_,i) =>
+      `<span class="star ${i < (c.stars||0) ? 'on' : 'off'}">★</span>`).join('');
+    const tags     = (c.tags||[]).slice(0,4).map(t =>
+      `<span class="tag">${esc(t)}</span>`).join('');
+    const imgs     = c.images || [];
+    const dateStr  = c.date ? ` &nbsp;·&nbsp; ${c.date}` : '';
+
+    const firstImg = imgs.length
+      ? `<img class="card-image" src="${imgs[0]}" alt="Image" loading="lazy"
+           data-course-id="${c.id}" data-img-index="0" />`
+      : '';
+
+    const thumbs = imgs.length > 1
+      ? `<div class="card-imgs">${imgs.slice(1).map((_, i) =>
+          `<img class="card-img-thumb" src="${imgs[i+1]}" alt="Photo ${i+2}" loading="lazy"
+             data-course-id="${c.id}" data-img-index="${i+1}" />`
+        ).join('')}</div>`
+      : '';
+
+    return `
+      <div class="course-card mat-${c.type}" data-id="${c.id}">
+        ${firstImg}
+        <div class="card-body">
+          <div class="card-top">
+            <span class="mat-badge badge-${c.type}">
+              ${c.type === 'principale' ? '✦ Principale' : '◈ Secondaire'}
+            </span>
+            <span class="course-score ${scoreClass(c.score)}">${c.score || '—'}</span>
+          </div>
+          <div class="course-name">${esc(c.name)}</div>
+          <div class="course-instructor">
+            ${c.instructor ? `✧ Prof. ${esc(c.instructor)}` : '✧ Professeur inconnu'}${dateStr}
+          </div>
+          <div class="stars">${stars}</div>
+          ${thumbs}
+          ${tags ? `<div class="tag-list">${tags}</div>` : ''}
+          ${c.notes ? `<div class="note-preview">"${esc(c.notes)}"</div>` : ''}
+          <div class="card-actions">
+            <button class="btn-sm"    data-action="edit"   data-id="${c.id}">✎ Modifier</button>
+            <button class="btn-sm danger" data-action="delete" data-id="${c.id}">✕ Supprimer</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function buildDevoirCard(d) {
+    const tags    = (d.tags||[]).slice(0,4).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+    const imgs    = d.images || [];
+    const firstImg = imgs.length
+      ? `<img class="card-image" src="${imgs[0]}" alt="Image" loading="lazy" data-dv-id="${d.id}" data-img-index="0" />`
+      : '';
+    const thumbs = imgs.length > 1
+      ? `<div class="card-imgs">${imgs.slice(1).map((_,i) =>
+          `<img class="card-img-thumb" src="${imgs[i+1]}" alt="Photo ${i+2}" loading="lazy" data-dv-id="${d.id}" data-img-index="${i+1}" />`
+        ).join('')}</div>`
+      : '';
+
+    const statusLabel = { rendu:'✓ Rendu', encours:'⏳ En cours', retard:'✕ En retard' }[d.status] || '—';
+    const statusClass = { rendu:'status-rendu', encours:'status-encours', retard:'status-retard' }[d.status] || '';
+
+    let deadlineHtml = '';
+    if (d.deadline) {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const dl = new Date(d.deadline);
+      const diff = Math.round((dl - today) / 86400000);
+      let dlText = `À rendre le ${d.deadline}`;
+      let urgent = false;
+      if (d.status !== 'rendu') {
+        if (diff < 0)      { dlText = `En retard de ${-diff} jour(s)`; urgent = true; }
+        else if (diff === 0){ dlText = `À rendre aujourd'hui !`; urgent = true; }
+        else if (diff <= 3) { dlText = `Dans ${diff} jour(s)`; urgent = true; }
+      }
+      deadlineHtml = `<div class="devoir-deadline${urgent?' urgent':''}">📅 ${dlText}</div>`;
+    }
+
+    return `
+      <div class="course-card mat-devoir" data-dv-id="${d.id}">
+        ${firstImg}
+        <div class="card-body">
+          <div class="card-top">
+            <span class="mat-badge badge-devoir">📜 Devoir</span>
+            <span class="course-score ${scoreClass(d.score)}">${d.score || '—'}</span>
+          </div>
+          <div class="course-name">${esc(d.sujet)}</div>
+          <div class="course-instructor">
+            ${d.instructor ? `✧ Prof. ${esc(d.instructor)}` : '✧ Professeur inconnu'}
+            ${d.matiere ? ` &nbsp;·&nbsp; ${esc(d.matiere)}` : ''}
+          </div>
+          <div style="margin-bottom:6px;"><span class="devoir-status ${statusClass}">${statusLabel}</span></div>
+          ${deadlineHtml}
+          ${thumbs}
+          ${tags ? `<div class="tag-list">${tags}</div>` : ''}
+          ${d.notes ? `<div class="note-preview">"${esc(d.notes)}"</div>` : ''}
+          <div class="card-actions">
+            <button class="btn-sm" data-dv-action="edit" data-dv-id="${d.id}">✎ Modifier</button>
+            <button class="btn-sm danger" data-dv-action="delete" data-dv-id="${d.id}">✕ Supprimer</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function esc(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  function renderAll() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+
+    const filteredCours = courses.filter(c => {
+      if (currentFilter === 'devoir') return false;
+      const matchF = currentFilter === 'all' || c.type === currentFilter;
+      const matchS = !search
+        || c.name.toLowerCase().includes(search)
+        || (c.instructor||'').toLowerCase().includes(search)
+        || (c.tags||[]).some(t => t.toLowerCase().includes(search));
+      return matchF && matchS;
+    });
+
+    const filteredDevoirs = devoirs.filter(d => {
+      if (currentFilter !== 'all' && currentFilter !== 'devoir') return false;
+      const matchS = !search
+        || d.sujet.toLowerCase().includes(search)
+        || (d.instructor||'').toLowerCase().includes(search)
+        || (d.matiere||'').toLowerCase().includes(search)
+        || (d.tags||[]).some(t => t.toLowerCase().includes(search));
+      return matchS;
+    });
+
+    const prim = filteredCours.filter(c => c.type === 'principale');
+    const sec  = filteredCours.filter(c => c.type === 'secondaire');
+    const main = document.getElementById('main-content');
+
+    if (!filteredCours.length && !filteredDevoirs.length) {
+      main.innerHTML = `<div class="courses-grid">
+        <div class="empty-state">
+          Aucun cours ou devoir trouvé dans le grimoire…
+          <span>Ajoute ton premier cours ou devoir avec les boutons ci-dessus.</span>
+        </div></div>`;
+      return;
+    }
+
+    let html = '';
+
+    if (prim.length && currentFilter !== 'secondaire' && currentFilter !== 'devoir') {
+      html += `<div class="section-block">
+        <div class="section-header">
+          <div class="section-title">✦ Matières Principales</div>
+          <div class="section-line"></div>
+          <div class="section-count">${prim.length} cours</div>
+        </div>
+        <div class="courses-grid">${prim.map(buildCard).join('')}</div>
+      </div>`;
+    }
+
+    if (sec.length && currentFilter !== 'principale' && currentFilter !== 'devoir') {
+      html += `<div class="section-block">
+        <div class="section-header">
+          <div class="section-title" style="color:var(--teal)">◈ Matières Secondaires</div>
+          <div class="section-line"></div>
+          <div class="section-count">${sec.length} cours</div>
+        </div>
+        <div class="courses-grid">${sec.map(buildCard).join('')}</div>
+      </div>`;
+    }
+
+    if (filteredDevoirs.length) {
+      html += `<div class="section-block">
+        <div class="section-header">
+          <div class="section-title" style="color:var(--amber-light)">📜 Devoirs</div>
+          <div class="section-line"></div>
+          <div class="section-count">${filteredDevoirs.length} devoir(s)</div>
+        </div>
+        <div class="courses-grid">${filteredDevoirs.map(buildDevoirCard).join('')}</div>
+      </div>`;
+    }
+
+    main.innerHTML = html;
+  }
+
+  function updateStats() {
+    document.getElementById('stat-total').textContent = courses.length;
+    const scored = courses.filter(c => c.score && c.score !== 'N/A' && c.score !== 'Échec');
+    if (!scored.length) { document.getElementById('stat-avg').textContent = '—'; return; }
+    const m = {A:4,B:3,C:2,D:1};
+    const avg = scored.reduce((s,c) => s + (m[c.score]||0), 0) / scored.length;
+    document.getElementById('stat-avg').textContent = ['D','C','B','A'][Math.round(avg)-1] || '—';
+    // Devoirs stat
+    const dvStatEl = document.getElementById('stat-devoirs');
+    if (dvStatEl) {
+      const enCours = devoirs.filter(d => d.status === 'encours' || d.status === 'retard').length;
+      dvStatEl.textContent = enCours;
+    }
+  }
+
+  /* ════════════════════════════════
+     DÉLÉGATION D'ÉVÉNEMENTS — grille
+     (corrige le bug "supprimer")
+  ════════════════════════════════ */
+  document.getElementById('main-content').addEventListener('click', function(e) {
+    // Boutons Modifier / Supprimer — cours
+    const btn = e.target.closest('[data-action]');
+    if (btn) {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      if (btn.dataset.action === 'edit')   openModal(courses.find(c => c.id === id));
+      if (btn.dataset.action === 'delete') deleteCourse(id);
+      return;
+    }
+
+    // Boutons Modifier / Supprimer — devoirs
+    const dvBtn = e.target.closest('[data-dv-action]');
+    if (dvBtn) {
+      e.stopPropagation();
+      const id = dvBtn.dataset.dvId;
+      if (dvBtn.dataset.dvAction === 'edit')   openDevoirModal(devoirs.find(d => d.id === id));
+      if (dvBtn.dataset.dvAction === 'delete') deleteDevoir(id);
+      return;
+    }
+
+    // Clic sur image — cours
+    const img = e.target.closest('[data-img-index]');
+    if (img && img.dataset.courseId) {
+      e.stopPropagation();
+      const c = courses.find(c => c.id === img.dataset.courseId);
+      if (c) openLightbox(c.images || [], parseInt(img.dataset.imgIndex, 10));
+      return;
+    }
+
+    // Clic sur image — devoirs
+    if (img && img.dataset.dvId) {
+      e.stopPropagation();
+      const d = devoirs.find(d => d.id === img.dataset.dvId);
+      if (d) openLightbox(d.images || [], parseInt(img.dataset.imgIndex, 10));
+      return;
+    }
+
+    // Clic carte cours
+    const card = e.target.closest('.course-card:not([data-dv-id])');
+    if (card && card.dataset.id) openViewModal('cours', card.dataset.id);
+
+    // Clic carte devoir
+    const dvCard = e.target.closest('.course-card[data-dv-id]');
+    if (dvCard) openViewModal('devoir', dvCard.dataset.dvId);
+  });
+
+  /* ════════════════════════════════
+     FILTRE & RECHERCHE
+  ════════════════════════════════ */
+  document.querySelector('.toolbar').addEventListener('click', e => {
+    const btn = e.target.closest('[data-filter]');
+    if (!btn) return;
+    currentFilter = btn.dataset.filter;
+    document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderAll();
+  });
+
+  /* ════════════════════════════════
+     MODALE DE LECTURE
+  ════════════════════════════════ */
+  let viewType = null; // 'cours' | 'devoir'
+  let viewId   = null;
+
+  function openViewModal(type, id) {
+    viewType = type;
+    viewId   = id;
+
+    if (type === 'cours') {
+      const c = courses.find(x => x.id === id);
+      if (!c) return;
+      const stars = Array.from({length:5}, (_,i) =>
+        `<span style="color:${i < (c.stars||0) ? 'var(--gold)' : 'var(--border)'}">★</span>`).join('');
+
+      document.getElementById('view-badge-row').innerHTML =
+        `<span class="mat-badge badge-${c.type}">${c.type === 'principale' ? '✦ Principale' : '◈ Secondaire'}</span>
+         <span class="course-score ${scoreClass(c.score)}" style="font-size:15px;">${c.score || '—'}</span>`;
+
+      document.getElementById('view-title').textContent = c.name;
+      document.getElementById('view-instructor').textContent =
+        c.instructor ? `✧ Prof. ${c.instructor}` : '';
+      document.getElementById('view-meta').innerHTML =
+        `${c.date ? `<span style="color:var(--muted);font-size:14px;font-style:italic;">📅 ${c.date}</span>` : ''}
+         <span class="view-stars">${stars}</span>
+         ${(c.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join('')}`;
+
+      let body = '';
+      if (c.notes) {
+        body += `<div>
+          <div class="view-section-label">Notes du cours</div>
+          <div class="view-notes">${esc(c.notes)}</div>
+        </div>`;
+      }
+      if ((c.images||[]).length) {
+        body += `<div>
+          <div class="view-section-label">${c.images.length} image(s)</div>
+          <div class="view-images-grid">${c.images.map((src,i) =>
+            `<img src="${src}" data-img-index="${i}" data-view-course-id="${c.id}" loading="lazy" />`
+          ).join('')}</div>
+        </div>`;
+      }
+      document.getElementById('view-body').innerHTML = body || `<div style="color:var(--muted);font-style:italic;">Aucune note pour ce cours.</div>`;
+
+    } else {
+      const d = devoirs.find(x => x.id === id);
+      if (!d) return;
+      const statusLabel = { rendu:'✓ Rendu', encours:'⏳ En cours', retard:'✕ En retard' }[d.status] || '—';
+      const statusClass = { rendu:'status-rendu', encours:'status-encours', retard:'status-retard' }[d.status] || '';
+
+      document.getElementById('view-badge-row').innerHTML =
+        `<span class="mat-badge badge-devoir">📜 Devoir</span>
+         <span class="devoir-status ${statusClass}" style="font-size:13px;">${statusLabel}</span>
+         ${d.score ? `<span class="course-score ${scoreClass(d.score)}" style="font-size:15px;">${d.score}</span>` : ''}`;
+
+      document.getElementById('view-title').textContent = d.sujet;
+      document.getElementById('view-instructor').textContent =
+        (d.instructor ? `✧ Prof. ${d.instructor}` : '') +
+        (d.matiere ? `  ·  ${d.matiere}` : '');
+
+      let deadlineTxt = '';
+      if (d.deadline) {
+        const today = new Date(); today.setHours(0,0,0,0);
+        const dl = new Date(d.deadline);
+        const diff = Math.round((dl - today) / 86400000);
+        if (d.status !== 'rendu') {
+          if (diff < 0)       deadlineTxt = `⚠ En retard de ${-diff} jour(s)`;
+          else if (diff === 0) deadlineTxt = `⚠ À rendre aujourd'hui !`;
+          else                deadlineTxt = `📅 À rendre dans ${diff} jour(s) (${d.deadline})`;
+        } else {
+          deadlineTxt = `📅 Rendu le ${d.deadline}`;
+        }
+      }
+
+      document.getElementById('view-meta').innerHTML =
+        `${deadlineTxt ? `<span style="color:var(--muted);font-size:14px;font-style:italic;">${deadlineTxt}</span>` : ''}
+         ${(d.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join('')}`;
+
+      let body = '';
+      if (d.notes) {
+        body += `<div>
+          <div class="view-section-label">Notes & observations</div>
+          <div class="view-notes">${esc(d.notes)}</div>
+        </div>`;
+      }
+      if ((d.images||[]).length) {
+        body += `<div>
+          <div class="view-section-label">${d.images.length} image(s)</div>
+          <div class="view-images-grid">${d.images.map((src,i) =>
+            `<img src="${src}" data-img-index="${i}" data-view-dv-id="${d.id}" loading="lazy" />`
+          ).join('')}</div>
+        </div>`;
+      }
+      document.getElementById('view-body').innerHTML = body || `<div style="color:var(--muted);font-style:italic;">Aucune note pour ce devoir.</div>`;
+    }
+
+    document.getElementById('view-modal').style.display = 'flex';
+  }
+
+  function closeViewModal() { document.getElementById('view-modal').style.display = 'none'; }
+
+  document.getElementById('view-close').addEventListener('click', closeViewModal);
+  document.getElementById('view-btn-close').addEventListener('click', closeViewModal);
+  document.getElementById('view-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('view-modal')) closeViewModal();
+  });
+
+  document.getElementById('view-btn-edit').addEventListener('click', () => {
+    closeViewModal();
+    if (viewType === 'cours')  openModal(courses.find(c => c.id === viewId));
+    if (viewType === 'devoir') openDevoirModal(devoirs.find(d => d.id === viewId));
+  });
+
+  // Clic image dans la vue de lecture → lightbox
+  document.getElementById('view-body').addEventListener('click', e => {
+    const img = e.target.closest('img[data-img-index]');
+    if (!img) return;
+    const idx = parseInt(img.dataset.imgIndex, 10);
+    if (img.dataset.viewCourseId) {
+      const c = courses.find(c => c.id === img.dataset.viewCourseId);
+      if (c) openLightbox(c.images || [], idx);
+    }
+    if (img.dataset.viewDvId) {
+      const d = devoirs.find(d => d.id === img.dataset.viewDvId);
+      if (d) openLightbox(d.images || [], idx);
+    }
+  });
+  document.getElementById('btn-add').addEventListener('click', () => openModal(null));
+  document.getElementById('btn-add-devoir').addEventListener('click', () => openDevoirModal(null));
+
+  /* ════════════════════════════════
+     MODAL DEVOIR
+  ════════════════════════════════ */
+  function openDevoirModal(d) {
+    editingDevoirId  = d ? d.id : null;
+    selectedDvScore  = d ? (d.score  || '') : '';
+    selectedDvStatus = d ? (d.status || 'encours') : 'encours';
+    pendingDvImages  = d ? (d.images || []).map(url => ({dataUrl:url})) : [];
+
+    document.getElementById('modal-devoir-title-text').textContent = d ? 'Modifier le devoir' : 'Nouveau devoir';
+    document.getElementById('dv-sujet').value      = d ? d.sujet      : '';
+    document.getElementById('dv-matiere').value    = d ? (d.matiere   || '') : '';
+    document.getElementById('dv-instructor').value = d ? (d.instructor|| '') : '';
+    document.getElementById('dv-deadline').value   = d ? (d.deadline  || '') : '';
+    document.getElementById('dv-notes').value      = d ? (d.notes     || '') : '';
+    document.getElementById('dv-tags').value       = d ? (d.tags||[]).join(', ') : '';
+
+    updateDvScorePicker();
+    updateDvStatusPicker();
+    renderDvPreviews();
+    document.getElementById('modal-devoir').style.display = 'flex';
+  }
+
+  function closeDevoirModal() { document.getElementById('modal-devoir').style.display = 'none'; }
+
+  document.getElementById('modal-devoir').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-devoir')) closeDevoirModal();
+  });
+  document.getElementById('dv-btn-cancel').addEventListener('click', closeDevoirModal);
+
+  // Status picker
+  document.getElementById('dv-status-picker').addEventListener('click', e => {
+    const opt = e.target.closest('[data-dv-status]');
+    if (!opt) return;
+    selectedDvStatus = opt.dataset.dvStatus;
+    updateDvStatusPicker();
+  });
+
+  function updateDvStatusPicker() {
+    document.querySelectorAll('[data-dv-status]').forEach(el => {
+      el.classList.toggle('selected', el.dataset.dvStatus === selectedDvStatus);
+    });
+  }
+
+  // Score picker devoir
+  document.getElementById('dv-score-picker').addEventListener('click', e => {
+    const opt = e.target.closest('[data-dv-score]');
+    if (!opt) return;
+    selectedDvScore = opt.dataset.dvScore;
+    updateDvScorePicker();
+  });
+
+  function updateDvScorePicker() {
+    document.querySelectorAll('[data-dv-score]').forEach(el => {
+      el.classList.toggle('selected', el.dataset.dvScore === selectedDvScore);
+    });
+  }
+
+  // Images devoir
+  document.getElementById('dv-img-file-input').addEventListener('change', async function() {
+    for (const f of Array.from(this.files||[])) {
+      pendingDvImages.push({ dataUrl: await fileToDataUrl(f) });
+    }
+    renderDvPreviews();
+    this.value = '';
+  });
+
+  const dva = document.getElementById('dv-upload-area');
+  dva.addEventListener('dragover',  e => { e.preventDefault(); dva.style.borderColor = 'var(--amber)'; });
+  dva.addEventListener('dragleave', () => { dva.style.borderColor = 'var(--border)'; });
+  dva.addEventListener('drop', async e => {
+    e.preventDefault();
+    dva.style.borderColor = 'var(--border)';
+    for (const f of Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))) {
+      pendingDvImages.push({ dataUrl: await fileToDataUrl(f) });
+    }
+    renderDvPreviews();
+  });
+
+  function renderDvPreviews() {
+    document.getElementById('dv-img-preview-list').innerHTML = pendingDvImages.map((img, i) => `
+      <div class="img-preview-item">
+        <img class="img-preview-thumb" src="${img.dataUrl}" alt="Aperçu ${i+1}" />
+        <button class="img-remove-btn" data-dv-preview-index="${i}">✕</button>
+      </div>`).join('');
+  }
+
+  document.getElementById('dv-img-preview-list').addEventListener('click', e => {
+    const btn = e.target.closest('[data-dv-preview-index]');
+    if (!btn) return;
+    pendingDvImages.splice(parseInt(btn.dataset.dvPreviewIndex, 10), 1);
+    renderDvPreviews();
+  });
+
+  // Sauvegarder devoir
+  document.getElementById('dv-btn-save').addEventListener('click', async () => {
+    const sujet = document.getElementById('dv-sujet').value.trim();
+    if (!sujet) { alert('Veuillez indiquer le sujet du devoir.'); return; }
+
+    const tags   = document.getElementById('dv-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+    const images = pendingDvImages.map(i => i.dataUrl);
+    const id     = editingDevoirId || Date.now().toString();
+
+    const obj = {
+      id,
+      sujet,
+      matiere:    document.getElementById('dv-matiere').value,
+      instructor: document.getElementById('dv-instructor').value.trim(),
+      deadline:   document.getElementById('dv-deadline').value,
+      status:     selectedDvStatus,
+      score:      selectedDvScore,
+      notes:      document.getElementById('dv-notes').value.trim(),
+      tags,
+      images
+    };
+
+    await saveImagesToIDB(id, images);
+
+    if (editingDevoirId) { devoirs = devoirs.map(d => d.id === editingDevoirId ? obj : d); }
+    else                 { devoirs.unshift(obj); }
+
+    saveDevoirs();
+    closeDevoirModal();
+    renderAll();
+    updateStats();
+    showToast('📜 Devoir enregistré');
+  });
+
+  function deleteDevoir(id) {
+    if (!confirm('Supprimer ce devoir du grimoire ?')) return;
+    devoirs = devoirs.filter(d => d.id !== id);
+    deleteImagesFromIDB(id);
+    saveDevoirs();
+    renderAll();
+    updateStats();
+    showToast('✕ Devoir supprimé');
+  }
+
+  /* ════════════════════════════════
+     MODAL
+  ════════════════════════════════ */
+  function openModal(course) {
+    editingId     = course ? course.id : null;
+    selectedScore = course ? (course.score || '') : '';
+    selectedStars = course ? (course.stars || 0) : 0;
+    pendingImages = course ? (course.images || []).map(url => ({dataUrl:url})) : [];
+
+    document.getElementById('modal-title-text').textContent = course ? 'Modifier le cours' : 'Nouveau cours';
+
+    const matSel    = document.getElementById('f-matiere');
+    const customRow = document.getElementById('custom-name-row');
+
+    if (course) {
+      const known = [...PRINCIPALES, ...SECONDAIRES];
+      if (known.includes(course.name)) {
+        matSel.value = course.name;
+        customRow.style.display = 'none';
+      } else {
+        matSel.value = 'Autre';
+        document.getElementById('f-custom-name').value = course.name;
+        customRow.style.display = 'block';
+      }
+    } else {
+      matSel.value = 'Sortilège';
+      document.getElementById('f-custom-name').value = '';
+      customRow.style.display = 'none';
+    }
+
+    document.getElementById('f-type').value      = course ? course.type : 'principale';
+    document.getElementById('f-instructor').value = course ? (course.instructor||'') : '';
+    document.getElementById('f-date').value       = course ? (course.date||'') : new Date().toISOString().slice(0,10);
+    document.getElementById('f-notes').value      = course ? (course.notes||'') : '';
+    document.getElementById('f-tags').value       = course ? (course.tags||[]).join(', ') : '';
+
+    document.querySelectorAll('.score-option').forEach(el => {
+      el.classList.toggle('selected', el.dataset.score === selectedScore);
+    });
+
+    renderPreviews();
+    updateStarsPicker();
+    document.getElementById('modal').style.display = 'flex';
+  }
+
+  function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+  // Fermer en cliquant le fond
+  document.getElementById('modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal')) closeModal();
+  });
+
+  document.getElementById('btn-cancel').addEventListener('click', closeModal);
+
+  // Score picker
+  document.querySelector('.score-picker').addEventListener('click', e => {
+    const opt = e.target.closest('.score-option');
+    if (!opt) return;
+    selectedScore = opt.dataset.score;
+    document.querySelectorAll('.score-option').forEach(el => el.classList.remove('selected'));
+    opt.classList.add('selected');
+  });
+
+  // Stars picker
+  document.getElementById('stars-picker').addEventListener('click', e => {
+    const s = e.target.closest('.star-pick');
+    if (!s) return;
+    selectedStars = parseInt(s.dataset.v, 10);
+    updateStarsPicker();
+  });
+
+  function updateStarsPicker() {
+    document.querySelectorAll('.star-pick').forEach(s => {
+      s.classList.toggle('on', parseInt(s.dataset.v, 10) <= selectedStars);
+    });
+  }
+
+  // Matière → auto-type + champ personnalisé
+  document.getElementById('f-matiere').addEventListener('change', function() {
+    const isCustom = this.value === 'Autre';
+    document.getElementById('custom-name-row').style.display = isCustom ? 'block' : 'none';
+    const t = getAutoType(this.value);
+    if (t) document.getElementById('f-type').value = t;
+  });
+
+  /* ════════════════════════════════
+     IMAGES (upload & drag-drop)
+  ════════════════════════════════ */
+  document.getElementById('img-file-input').addEventListener('change', async function() {
+    for (const f of Array.from(this.files||[])) {
+      pendingImages.push({ dataUrl: await fileToDataUrl(f) });
+    }
+    renderPreviews();
+    this.value = '';
+  });
+
+  const ua = document.getElementById('upload-area');
+  ua.addEventListener('dragover',  e => { e.preventDefault(); ua.style.borderColor = 'var(--gold)'; });
+  ua.addEventListener('dragleave', () => { ua.style.borderColor = 'var(--border)'; });
+  ua.addEventListener('drop', async e => {
+    e.preventDefault();
+    ua.style.borderColor = 'var(--border)';
+    for (const f of Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))) {
+      pendingImages.push({ dataUrl: await fileToDataUrl(f) });
+    }
+    renderPreviews();
+  });
+
+  function renderPreviews() {
+    document.getElementById('img-preview-list').innerHTML = pendingImages.map((img, i) => `
+      <div class="img-preview-item">
+        <img class="img-preview-thumb" src="${img.dataUrl}" alt="Aperçu ${i+1}" />
+        <button class="img-remove-btn" data-preview-index="${i}">✕</button>
+      </div>`).join('');
+  }
+
+  document.getElementById('img-preview-list').addEventListener('click', e => {
+    const btn = e.target.closest('[data-preview-index]');
+    if (!btn) return;
+    pendingImages.splice(parseInt(btn.dataset.previewIndex, 10), 1);
+    renderPreviews();
+  });
+
+  /* ════════════════════════════════
+     ENREGISTRER / SUPPRIMER
+  ════════════════════════════════ */
+  document.getElementById('btn-save').addEventListener('click', async () => {
+    const matSel   = document.getElementById('f-matiere').value;
+    const isCustom = matSel === 'Autre';
+    const name     = isCustom
+      ? document.getElementById('f-custom-name').value.trim()
+      : matSel;
+
+    if (!name) { alert('Veuillez indiquer le nom du cours.'); return; }
+
+    const tags   = document.getElementById('f-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+    const images = pendingImages.map(i => i.dataUrl);
+    const id     = editingId || Date.now().toString();
+
+    const obj = {
+      id,
+      name,
+      type:       document.getElementById('f-type').value,
+      instructor: document.getElementById('f-instructor').value.trim(),
+      date:       document.getElementById('f-date').value,
+      score:      selectedScore,
+      stars:      selectedStars,
+      notes:      document.getElementById('f-notes').value.trim(),
+      tags,
+      images
+    };
+
+    // Sauvegarder les images HD dans IndexedDB
+    await saveImagesToIDB(id, images);
+
+    if (editingId) { courses = courses.map(c => c.id === editingId ? obj : c); }
+    else           { courses.unshift(obj); }
+
+    saveCourses();
+    closeModal();
+    renderAll();
+    updateStats();
+    showToast('✦ Cours enregistré');
+  });
+
+  function deleteCourse(id) {
+    if (!confirm('Supprimer ce cours du grimoire ?')) return;
+    courses = courses.filter(c => c.id !== id);
+    deleteImagesFromIDB(id);
+    saveCourses();
+    renderAll();
+    updateStats();
+    showToast('✕ Cours supprimé');
+  }
+
+  /* ════════════════════════════════
+     LIGHTBOX
+  ════════════════════════════════ */
+  function openLightbox(imgs, idx) {
+    lbImages = imgs;
+    lbIndex  = idx;
+    document.getElementById('lb-img').src = lbImages[lbIndex];
+    updateLbCounter();
+    document.getElementById('lightbox').classList.add('open');
+  }
+
+  function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+
+  function lbNav(dir) {
+    lbIndex = (lbIndex + dir + lbImages.length) % lbImages.length;
+    document.getElementById('lb-img').src = lbImages[lbIndex];
+    updateLbCounter();
+  }
+
+  function updateLbCounter() {
+    document.getElementById('lb-counter').textContent =
+      lbImages.length > 1 ? `${lbIndex+1} / ${lbImages.length}` : '';
+  }
+
+  document.getElementById('lightbox').addEventListener('click', e => {
+    if (e.target === document.getElementById('lightbox') ||
+        e.target === document.getElementById('lb-img')) closeLightbox();
+  });
+  document.getElementById('lb-close').addEventListener('click', closeLightbox);
+  document.getElementById('lb-prev').addEventListener('click', e => { e.stopPropagation(); lbNav(-1); });
+  document.getElementById('lb-next').addEventListener('click', e => { e.stopPropagation(); lbNav(1); });
+
+  /* ════════════════════════════════
+     CLAVIER
+  ════════════════════════════════ */
+  document.addEventListener('keydown', e => {
+    if (document.getElementById('lightbox').classList.contains('open')) {
+      if (e.key === 'ArrowLeft')  lbNav(-1);
+      if (e.key === 'ArrowRight') lbNav(1);
+      if (e.key === 'Escape')     closeLightbox();
+      return;
+    }
+    if (e.key === 'Escape' && document.getElementById('view-modal').style.display !== 'none') {
+      closeViewModal(); return;
+    }
+    if (e.key === 'Escape' && document.getElementById('modal').style.display !== 'none') {
+      closeModal();
+    }
+  });
+
+  /* ════════════════════════════════
+     INIT
+  ════════════════════════════════ */
+  loadCourses();
+  loadDevoirs();
+  // Charger les images HD depuis IndexedDB, puis afficher
+  loadAllImages().then(() => {
+    renderAll();
+    updateStats();
+  });
+</script>
+</body>
+</html>
